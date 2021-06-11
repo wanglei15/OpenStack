@@ -1,0 +1,145 @@
+如何配置OpenStack网络以允许访问OpenStack实例,
+教置OpenStack网络服务，以便允许从外部网络访问OpenStack实例。
+
+1.在RHEL和CentOS 7中安装OpenStack
+
+第一步：修改网络接口配置文件
+
+1.在开始从dashboard创建OpenStack网络之前，首先我们需要创建一个OVS网桥，并修改我们的物理网络接口，将其作为端口绑定到OVS网桥。
+
+因此，登录到您的服务器终端，导航到networkinterfaces目录脚本，并使用物理接口作为摘录，通过发出以下命令来设置OVS网桥接口：
+
+#cd/etc/sysconfig/网络脚本/
+
+#cp ifcfg-eno16777736 ifcfg br ex
+
+在OpenStack中设置OVS桥接口
+
+2.接下来，使用文本编辑器编辑和修改桥接接口（br ex），如下所示：
+
+#vi ifcfg-br-ex
+
+TYPE="Ethernet"
+BOOTPROTO="none"
+DEFROUTE="yes"
+IPV4_FAILURE_FATAL="no"
+IPV6INIT="no"
+IPV6_AUTOCONF="no"
+IPV6_DEFROUTE="no"
+IPV6_FAILURE_FATAL="no"
+NAME="br-ex"
+UUID="1d239840-7e15-43d5-a7d8-d1af2740f6ef"
+DEVICE="br-ex"
+ONBOOT="yes"
+IPADDR="192.168.1.41"
+PREFIX="24"
+GATEWAY="192.168.1.1"
+DNS1="127.0.0.1"
+DNS2="192.168.1.1"
+DNS3="8.8.8.8"
+IPV6_PEERDNS="no"
+IPV6_PEERROUTES="no"
+IPV6_PRIVACY="no"
+为OpenStack配置网桥网络接口
+
+3.对物理接口（eno16777736）执行相同的操作，但请确保其外观如下：
+
+vi ifcfg-eno16777736
+TYPE="Ethernet"
+BOOTPROTO="none"
+DEFROUTE="yes"
+IPV4_FAILURE_FATAL="no"
+IPV6INIT="no"
+IPV6_AUTOCONF="no"
+IPV6_DEFROUTE="no"
+IPV6_FAILURE_FATAL="no"
+NAME="eno16777736"
+DEVICE="eno16777736"
+ONBOOT="yes"
+TYPE=”OVSPort”
+DEVICETYPE=”ovs”
+OVS_BRIDGE=”br-ex”
+
+为OpenStack配置物理网络接口
+
+重要提示：编辑接口卡时，请确保相应地替换物理接口名称、IP和DNS服务器。
+
+4.最后，在修改和编辑了两个网络接口之后，重新启动网络守护进程以反映更改并使用ip命令验证新配置。
+
+#systemctl restart network.service
+
+#ip a
+
+验证网络配置
+
+步骤2：创建新的OpenStack项目（租户）
+
+5.在这一步中，我们需要使用Openstack dashboard来进一步配置我们的云环境。
+
+使用管理员凭据登录到Openstack web面板（仪表板），然后转到Identity->Projects->Create Project并创建一个新项目。
+
+创建新的OpenStack项目添加OpenStack新项目详细信息
+
+6.接下来，导航到Identity->Users->Create User，并用所需信息填充所有字段，创建一个新用户。
+
+确保此新用户的角色已分配为新创建的租户（项目）的成员。
+
+在OpenStack项目中创建新用户
+
+步骤3：配置OpenStack网络
+
+7.创建用户后，从仪表板注销admin，并使用新用户登录，以创建两个网络（内部网络和外部网络）。
+
+导航到“项目”->“网络”->“创建网络”，然后按如下方式设置内部网络：
+
+网络名称：内部
+
+管理状态：向上
+
+创建子网：选中
+
+子网名称：内部tecmint
+
+网络地址：192.168.254.0/24
+
+IP版本：IPv4
+
+网关IP:192.168.254.1
+
+DHCP:启用
+
+使用下面的屏幕截图作为指导。另外，将网络名称、子网名称和IP地址替换为您自己的自定义设置。
+
+以用户身份登录到OpenStack仪表板为OpenStack创建网络为OpenStack创建网络子网为OpenStack启用DHCP为OpenStack
+
+8.接下来，使用与上面相同的步骤创建外部网络。确保外部网络的IP地址空间与上行网桥接口IP地址范围在同一网络范围内，以便在没有额外路由的情况下正常工作。
+
+因此，如果br ex接口有192.168.1.1作为192.168.1.0/24网络的默认网关，那么外部网络也应该配置相同的网络和网关ip。
+
+网络名称：外部
+
+管理状态：向上
+
+创建子网：选中
+
+子网名称：external tecmint
+
+网络地址：192.168.1.0/24
+
+IP版本：IPv4
+
+网关IP:192.168.1.1
+
+DHCP:启用
+
+为OpenStack创建外部网络为外部网络创建子网为外部网络启用DHCP
+
+同样，根据您自己的自定义配置替换网络名称、子网名称和IP地址。
+
+9.下一步，我们需要以admin身份登录OpenStack dashboard，并将外部网络标记为external，以便能够与网桥接口通信。
+
+因此，使用管理员凭据登录并移动到admin->System->Networks，单击外部网络，选中外部网络框并单击Save Changes以应用配置。
+
+在OpenStack仪表板中以管理员身份登录选择外部网络使网络作为外部网络外部网络设置更新
+
+完成后，从管理员注销
