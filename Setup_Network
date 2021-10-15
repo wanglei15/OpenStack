@@ -7,15 +7,15 @@
 
 1.在开始从dashboard创建OpenStack网络之前，首先我们需要创建一个OVS网桥，并修改我们的物理网络接口，将其作为端口绑定到OVS网桥。
 
-因此，登录到您的服务器终端，导航到networkinterfaces目录脚本，并使用物理接口作为摘录，通过发出以下命令来设置OVS网桥接口：
+因此，登录到您的服务器终端，进入到如下目录，并设置OVS网桥：
 
-#cd/etc/sysconfig/网络脚本/
+#cd/etc/sysconfig/network-scripts/
 
-#cp ifcfg-eno16777736 ifcfg br ex
+#cp ifcfg-eno16777736 ifcfg-br-ex
 
 在OpenStack中设置OVS桥接口
 
-2.接下来，使用文本编辑器编辑和修改桥接接口（br ex），如下所示：
+2.接下来，使用文本编辑器编辑和修改桥接接口（ifcfg-br-ex），如下所示：
 
 #vi ifcfg-br-ex
 
@@ -28,7 +28,7 @@ IPV6_AUTOCONF="no"
 IPV6_DEFROUTE="no"
 IPV6_FAILURE_FATAL="no"
 NAME="br-ex"
-UUID="1d239840-7e15-43d5-a7d8-d1af2740f6ef"
+#UUID="1d239840-7e15-43d5-a7d8-d1af2740f6ef"
 DEVICE="br-ex"
 ONBOOT="yes"
 IPADDR="192.168.1.41"
@@ -66,7 +66,7 @@ OVS_BRIDGE=”br-ex”
 
 4.最后，在修改和编辑了两个网络接口之后，重新启动网络守护进程以反映更改并使用ip命令验证新配置。
 
-#systemctl restart network.service
+#systemctl restart network
 
 #ip a
 
